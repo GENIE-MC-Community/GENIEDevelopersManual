@@ -1,0 +1,166 @@
+Implementing New Models
+-----------------------
+[[Implementing-New-Models]]
+
+Implementing a new model in GENIE is relatively straightforward, factoring out the 
+complexity of the actual physics and considering only the software architecture.
+Modles in GENIE are broken down into:
+
+. A series of event record visitors. Each visitor carries out once link in the computation
+chain required to connect the initial state (the projectile and the target) and the final 
+state. In principle all of these steps may be combined into one class, but it is better 
+to break them into modular (even reusable) steps.
+. One of the links in the event record visitor chain should compute differential cross
+sections. It is additionally necessary to write a cross sections module that will 
+integrate the differential cross section to produce a total cross section when generating
+splines. Before the differential cross section code is available, you can cheat and write 
+the spline by hand!
+. Modifications to the configuration XML that provide quantitative values for parameters 
+and specify whether the model should be included in a simulation and how to chain the 
+event record visitors together.
+. Machinery to hook into ROOT, both for interactive use inside CINT and because ROOT 
+is deeply integrated into GENIE (including, for example, class loading).
+
+Because it is difficult to explain all these steps in an abstract way, we will present
+case studies and hope they are sufficient to get developers started.
+
+Implementing the Berger-Sehgal Model
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[Implementing-Berger-Sehgal]]
+
+The first and best step is to examine the most similar existing models. (If you have 
+nothing similar, then just read any model carefully.) Two very useful exercies are:
+
+. Step through a calculation of the integrated cross section for spline generation.
+Go to <<Generating-a-Spline>> and create a spline file for only the process you wish 
+to study. Step through the spline generation with +gdb+ using `gdb -tui gmkspl` and 
+set the arguments to whatever is required to generate your study channel only. This 
+will give you a good idea as to how the numerical integrators are called. (You needn't
+be concerned with the actual methods of integration though unless that is a focus of 
+your work.
+. Step through the computation of the differential cross section. Stepping through the 
+spline generation carefully will also bring you through the codes that do these steps
+but you may also wish to just run them on their own, again watching in +gdb+ wtih 
+`gdb -tui gevgen` and setting the arguments appropriately in +gdb+.
+
+In this example, the Berger-Sehgal coherent pion model is very similar to the Rein-
+Sehgal model. Both models have identical initial and final states and both exploit
+the PCAC hypothesis. 
+
+If we check the structure of Rein-Sehgal, we find a directory under +src+ 
+(unfortunately misspelled) that contains the coherent pion code (and other things 
+as well, since Rein and Sehgal produced several important models together). 
+
+By examing the configuation XML discussed <<Configuration-XML>>, we realize that
+the Rein-Sehgal coherent pion model is called for both the +COH-NC+ and +COH-CC+ 
+event lists by default in GENIE 2.8.0. By examining the list of event record 
+visitors for those events, we can find the names of several other classes that look
+to play an important role in the calculation. Running `find` on the GENIE +src+ 
+directory, we can find the important classes quickly:
+
+-----------------------
+$ ls -l ReinSeghal/ReinSeghalCOHPiPXSec.*
+-rw-r--r-- 1 perdue e938   8333 Aug 23  2013 ReinSeghal/ReinSeghalCOHPiPXSec.cxx
+-rw-r--r-- 1 perdue e938   2370 Aug 23  2013 ReinSeghal/ReinSeghalCOHPiPXSec.h
+
+$ ls -l Coherent/*.cxx | grep -v El
+-rw-r--r-- 1 perdue e938  8547 Oct  8 13:53 Coherent/COHHadronicSystemGenerator.cxx
+-rw-r--r-- 1 perdue e938  4082 Sep 30 10:25 Coherent/COHInteractionListGenerator.cxx
+-rw-r--r-- 1 perdue e938 25105 Oct  8 13:53 Coherent/COHKinematicsGenerator.cxx
+-rw-r--r-- 1 perdue e938  4697 Oct  8 13:53 Coherent/COHPrimaryLeptonGenerator.cxx
+-----------------------
+
+In this case it is simple to mimic the structure of Rein-Sehgal and add a directory 
+to +src+ to hold the new model:
+
+-----------------------
+$ ls -l BergerSehgal/*.cxx
+-rw-r--r-- 1 perdue e938 8373 Sep 30 10:26 BergerSehgal/BergerSehgalCOHPiPXSec.cxx
+-----------------------
+
+During event generation we go through classes in the +src/Coherent+ directory and find 
+clauses like:
+
+ifdef::basebackend-docbook[[source,c++]]
+ifdef::basebackend-html[[source,cpp]]
+-----------------------
+  if (fXSecModel->Id().Name() == "genie::ReinSeghalCOHPiPXSec") {
+       CalculateHadronicSystem_ReinSeghal(evrec);
+  } else if ((fXSecModel->Id().Name() == "genie::AlvarezRusoCOHXSec")) {
+       CalculateHadronicSystem_AlvarezRuso(evrec);
+  }
+-----------------------
+
+Therefore, we need to add the lines:
+
+ifdef::basebackend-docbook[[source,c++]]
+ifdef::basebackend-html[[source,cpp]]
+-----------------------
+  } else if ((fXSecModel->Id().Name() == "genie::BergerSehgalCOHPiXSec")) {
+       CalculateHadronicSystem_BergerSehgal(evrec);
+-----------------------
+
+along with the appropriate function implementations everywhere appropriate (there are 
+a half-dozen or so required locations). 
+
+Additionally, while generating the cross section splines, we stepped through a 
+class in +src/CrossSections+ named +COHXSec+ that needs to adopt this look-up mechanism
+so it can call the appropriate model when producing the contribution to the total 
+cross section.
+
+Once we have implemented the code, we need to update the configuration XML.
+We update +config/master_config.xml+ by adding the line 
+
+-----------------------
+<config alg="genie::BergerSehgalCOHPiPXSec"> BergerSehgalCOHPiPXSec.xml </config>
+-----------------------
+
+to the `<!--  ****** CONFIGURATION FOR XSEC ALGORITHMS ****** -->` block. The 
++BergerSehgalCOHPiPXSec.xml+ does not exist by default, we need to create it
+as our next step. In this case we can essentially copy and rename the appropriate 
+Rein-Sehgal analog, but if one is attempting to do something very non-standard, this 
+step may require more thought.
+
+// In +config+ directory, make sure we have a configuration file matching the 
+// name of the file specified in +master_config.xml+:
+// -----------------------
+// cp ReinSeghalCOHPiPXSec.xml BergerSehgalCOHPiPXSec.xml
+// -----------------------
+
+Next, we need to update +config/UserPhysicsOptions.xml+ if we want to use this 
+model. In this case, we just swap out Rein-Sehgal for Berger-Sehgal by commenting 
+out the RS model and adding the lines:
+
+-----------------------
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-CC"> 
+  genie::BergerSehgalCOHPiPXSec/Default 
+</param>
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-NC"> 
+  genie::BergerSehgalCOHPiPXSec/Default 
+</param>
+-----------------------
+// Comment out lines that set AlvarezRuso or ReinSeghal [sic] to the COH default.
+
+In cases where we want mutliple models present, we should probably add a controller 
+class that contains the logic for choosing.
+
+We also need to be sure the +LinkDef.h+ file in our new package has the right class 
+names defined. In this case, we can just copy and edit the Rein-Sehgal file (trimming
+unneeded lines for the resonance model, etc.).
+
+// -----------------------
+// Investigate double genie::utils::hadxs::TotalPionNucleonXSec(double Epion) 
+// Also, utils::hadxs::InelasticPionNucleonXSec(Epi)
+// -----------------------
+
+To get our new module to build, we add BergerSehgal to the top-level +Makefile+.
+We also need to update the libs variable in +src/scripts/genie-config+.
+
+Finally, on should be sure before running the code that the model is represented in the 
+cross section spline. One may need to edit a file by hand for quick-and-dirty testing, but 
+we will need to eventually be able to run `gmkspl` to produce the splines correctly. This 
+may require you to update and/or add an integrator, so it is reasonable to put that step
+off at the very beginning and use a ``by hand'' file with fake numbers and a monochromatic
+neutrino beam for early-stage testing.
+
+

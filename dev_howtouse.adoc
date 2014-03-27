@@ -1,0 +1,31 @@
+
+How to Use this Guide
+---------------------
+[[How-To]]
+
+This guide is meant to bring a GENIE model developer up to speed on contributing to
+GENIE quickly. The most common ways to contribute are:
+
+* Modify the parameters of an existing model without changing the code.
+* Extend the functionality of an existing model.
+* Debug an error in an existing model.
+* Author an entirely new model.
+
+Developers may safely skip <<Building-GENIE>> if they have already built the code, but 
+may find it useful if they did not build all of the third-party packages from source 
+or lack debugging symbols in some of the packages.
+
+Please read <<Running-GENIE-Basics>> first, and then do the exercises in 
+<<CCQE-Walkthrough>>. Then read <<Configuration-XML>>, although it is not quite complete.
+The other sections are still very rough and should not be taken seriously quite yet.
+
+We strongly recommend at least skimming the NIM paper <<Andreopoulos:2009rq>>.
+Section five should be read closely as it explains the orginazation and primary design 
+patterns.
+
+The complete source code for this document and some supporting files for the exercises 
+within (cross section spline files, the +build_pythia6.sh+ script, some run scripts, 
+`gdb` and `valgrind` templates for the `.gdbinit` and `.valgrindrc` files, etc.) may
+be checked out from Fermilab Redmine at any time with:
+
+  git clone http://cdcvs.fnal.gov/projects/developer_manual

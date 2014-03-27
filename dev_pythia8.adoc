@@ -1,0 +1,10 @@
+
+Pythia 8
+~~~~~~~~
+
+Go to the http://home.thep.lu.se/~torbjorn/Pythia.html[Pythia Web Page] and download 
+one of the Pythia 8 source code tarballs. Here we are using +pythia8183.tgz+.
+
+Build a new support area and unpack the tarball there.
+
+

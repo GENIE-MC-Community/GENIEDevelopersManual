@@ -1,0 +1,27 @@
+GENIE Developer's Manual
+========================
+
+// Push titles down one level.
+:leveloffset: 1
+
+include::dev_intro.adoc[]
+
+include::dev_howtouse.adoc[]
+
+include::dev_gettinghelp.adoc[]
+
+include::dev_build.adoc[]
+
+include::dev_runthecode.adoc[]
+
+include::dev_ccqewalkthrough.adoc[]
+
+include::dev_configfilenotes.adoc[]
+
+include::dev_modelgeneral.adoc[]
+
+include::dev_bergersehgal.adoc[]
+
+include::dev_bib.adoc[]
+
+// change this file to update the timestamp on the web if you must...

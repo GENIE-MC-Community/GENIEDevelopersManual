@@ -1,0 +1,470 @@
+
+Building GENIE
+--------------
+[[Building-GENIE]]
+
+Building from Scratch on Linux
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Complete instructions for installing GENIE may be found in the Physics and User 
+Manual (PUM) published on the GENIE web page <<geniemanual>>. Users who have either 
+already installed GENIE or read the PUM may skip this section. Developers 
+who need all the supporting libraries build with debug symbols may find it useful 
+though.
+
+This document logs the experience of working with multiple installations in parallel. 
+We will provide examples of installing GENIE and all third-party software by hand. 
+Developers should use centrally installed software when appropriate, but it is important 
+to be able to run code with debugging symbols present and central installations
+often have compiler optimizations turned on.
+
+We will eventually build a directory tree that looks something like this:
+
+-----------------------
+<some path>/GENIE                           # GENIE Work Directory
+           /GENIE/support                   # for 3rd party code     
+                         /gsl               # install
+                         /gsl-<version>     # source 
+                         /lhapdf            # install / data
+                         /lhapdf-<version>  # source
+                         /log4cpp
+                         /pythia6
+                         /root
+           /GENIE/R-2_8_0                   # frozen release
+           /GENIE/Dev-R-2_8_0               # development
+-----------------------
+
+Your directory structure may look different if you install some software via a 
+package manager (for example, you probably don't need to actually build your own copy of
++log4cpp+). In the examples below, we will sometimes repalce ``some path'' with
++/minerva/app/users/perdue+. This is an example of copy-paste ``junk DNA''.
+
+First, we will check out a couple of copies of the GENIE source code and build all 
+the third-party software (Pythia, ROOT, log4cpp, LHAPDF). It is useful to have a 
+development version of the GENIE code as well as a ``frozen release'' version for 
+comparison and to help answer questions from users. Check the official 
+https://genie.hepforge.org/trac/browser[repository browser] for development branches. 
+
+CAUTION: If you don't have a good idea of _why_ you might be interested in a particular 
+development branch it is probably best to only check out the latest release version.
+The specific branch below is just an example and not a general recommendation.
+
+-----------------------
+$ #-- Get the GENIE code.
+$ cd <Your Development Area>
+$ mkdir GENIE  # for GENIE and local copies of 3rd party software
+$ cd GENIE
+$ svn list http://genie.hepforge.org/svn/branches
+$ # svn co http://svn.hepforge.org/genie/branches/<genie_tag> <local_dir>
+$ svn co http://genie.hepforge.org/svn/branches/R-2_8_0/ R-2_8_0/
+$ # Choose a development branch that matches what you are working on.
+$ # If there is no appropriate branch, don't worry about checking one out.
+$ # Instead, feel free to check out another copy of R-2_8_0 in a ``dev'' area.
+$ export GDVTAG="_devel_branch_not_for_users_v280_06jun13_hugh_nd9832nxll3a1/"
+$ svn co http://genie.hepforge.org/svn/branches/${GDVTAG} Dev-R-2_8_0
+$ unset GDVTAG
+-----------------------
+
+With the GENIE raw source in hand, we'll checkout and build all the required 
+third-part libraries, starting with Pythia (and working in the same directory as 
+above when we checked out GENIE, in our development area):
+
+-----------------------
+$ mkdir support && cd support  # for 3rd-party
+$ mkdir pythia6 && cd pythia6  # get Pythia first (for ROOT)
+$ # Get a copy of R. Hatcher's build_pythia6.sh script.
+$ . build_pythia6.sh 
+-----------------------
+
+You may find a copy of +build_pythia6.sh+ 
+https://genie.hepforge.org/trac/browser/trunk/src/scripts/build/ext/build_pythia6.sh[here] 
+(and via Google):
+
+Next we'll get GSL, but first check to see if it is already installed by 
+executing `locate libgsl`. We'll include an example installing from source 
+below, but GSL is a library you will essentially never need to step through 
+with a debugger, so using a package manager and installing optimized libraries
+should be fine.
+
+-----------------------
+$ cd ..    # go back to top-level support
+$ tar -xvzf gsl-1.16.tgz
+$ mkdir gsl && cd gsl-1.16
+-----------------------
+
+We will author a configure script (use your +support+ area) both to make it clear
+what is happening and to have a record of what we did: 
+
+.do_configure.sh
+ifdef::basebackend-html[:d: \$]
+ifdef::basebackend-docbook[:d: $]
+ifdef::basebackend-docbook[[source,bash]]
+ifdef::basebackend-html[[source,bash]]
+[subs="attributes,specialcharacters"]
+-----------------------
+#!/bin/bash
+INSTDIR=/minerva/app/users/perdue/GENIE/support/gsl
+./configure --prefix={d}INSTDIR
+unset INSTDIR
+-----------------------
+
+In this example, we use four cores in the build:
+
+-----------------------
+$ ./do_configure
+$ time nice make -j4
+$ make check
+$ make install
+-----------------------
+
+After GSL, we will build ROOT next (any recent version 5 tag should work, version 6 
+has not yet been tested):
+
+-----------------------
+$ cd ..    # go back to top-level support
+$ git clone http://root.cern.ch/git/root.git
+$ cd root/
+$ git tag -l         # choose your preferred tag
+$ git checkout -b v5-34-08 v5-34-08
+-----------------------
+
+We will again author a configuration script, +do_configure.sh+:
+
+ifdef::basebackend-html[:d: \$]
+ifdef::basebackend-docbook[:d: $]
+ifdef::basebackend-docbook[[source,bash]]
+ifdef::basebackend-html[[source,bash]]
+[subs="attributes,specialcharacters"]
+-----------------------
+#!/bin/sh
+export GDVS=/minerva/app/users/perdue/GENIE/support
+./configure linuxx8664gcc \
+ --build=debug \
+ --enable-pythia6 \
+ --with-pythia6-libdir=$GDVS/pythia6/v6_424/lib \
+ --enable-gsl-shared \
+ --enable-mathmore \
+ --with-gsl-incdir=$GDVS/gsl/include \
+ --with-gsl-libdir=$GDVS/gsl/lib
+unset GDVS
+-----------------------
+
+Note, you may choose to drop the ``debug'' flag if you plan on running optimized 
+code for performance. In the example below, we do not specify for the make process
+to use additional cores (sometimes ROOT has touble if you add cores to the build):
+
+-----------------------
+$ make
+$ cd ..    # go back to top-level support
+$ # Get log4cpp source.
+$ cd support/log4cpp
+$ ./autogen.sh
+$ gmake
+$ gmake install
+-----------------------
+
+For the last third-party library, we will build LHAPDF. We will use LHAPDF 
+5.9 at this stage because version 6 and later requires the Boost libraries.
+A good project would be to test LHAPDF 6 with the system version of Boost and,
+if necessary, install a newer version of Boost. 
+
+CAUTION: Don't lose track of the PDF download below - it is not clear we have chosen 
+the right PDF sets! DO NOT rely on this guide to produce physics results without verifying 
+the correct choice of PDFs!
+
+-----------------------
+$ cd ..    # go back to top-level support
+$ # Get source for LHAPDF (e.g., 5.9.0)
+$ # LHAPDF 6+ is C++ and requires Boost.
+$ cd lhapdf-5.9.0/
+$ mkdir ../lhapdf  # Install into this directory.
+$ ./configure --prefix=<Your Dev>/GENIE/support/lhapdf
+$ gmake
+$ gmake install
+$ # Now we have to actually download a few PDFs.
+$ # Do we choose the right ones? Who knows? Not much guidance...
+$ cd bin  # bin dir in lhapdf-5.9.0
+$ ./lhapdf-getdata GRV98lo.LHgrid --dest=<Your Dev>/GENIE/support/lhapdf
+$ ./lhapdf-getdata GRV98nlo.LHgrid --dest=<Your Dev>/GENIE/support/lhapdf
+-----------------------
+
+Next, we will build GENIE. We will keep a pair of scripts to configure our 
+environments, first for the frozen release:
+
+.environment_genie.sh
+ifdef::basebackend-html[:d: \$]
+ifdef::basebackend-docbook[:d: $]
+ifdef::basebackend-docbook[[source,bash]]
+ifdef::basebackend-html[[source,bash]]
+[subs="attributes,specialcharacters"]
+-----------------------
+#!/bin/bash
+echo "Setting GENIE environment variables..."
+export GENIEBASE=/minerva/app/users/perdue/GENIE
+export GENIE={d}GENIEBASE/R-2_8_0
+export PYTHIA6={d}GENIEBASE/support/pythia6/v6_424/lib
+export ROOTSYS={d}GENIEBASE/support/root
+export LOG4CPP_INC={d}GENIEBASE/support/log4cpp/include
+export LOG4CPP_LIB={d}GENIEBASE/support/log4cpp/lib
+export LHAPATH={d}GENIEBASE/support/lhapdf
+export LHAPDF_INC={d}GENIEBASE/support/lhapdf/include
+export LHAPDF_LIB={d}GENIEBASE/support/lhapdf/lib
+export XSECSPLINEDIR={d}GENIEBASE/data
+export LD_LIBRARY_PATH={d}LHAPDF_LIB:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib64:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}LOG4CPP_LIB:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}PYTHIA6:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}ROOTSYS/lib:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}GENIE/lib:{d}LD_LIBRARY_PATH
+export PATH={d}GENIE/bin:{d}ROOTSYS/bin:{d}PATH
+unset GENIEBASE
+-----------------------
+
+And for the development installation: 
+
+.environment_devgenie.sh
+ifdef::basebackend-html[:d: \$]
+ifdef::basebackend-docbook[:d: $]
+ifdef::basebackend-docbook[[source,bash]]
+ifdef::basebackend-html[[source,bash]]
+[subs="attributes,specialcharacters"]
+-----------------------
+#!/bin/bash
+echo "Setting GENIE environment variables..."
+export GENIEBASE=/minerva/app/users/perdue/GENIE
+export GENIE={d}GENIEBASE/Dev-R-2_8_0
+export PYTHIA6={d}GENIEBASE/support/pythia6/v6_424/lib
+export ROOTSYS={d}GENIEBASE/support/root
+export LOG4CPP_INC={d}GENIEBASE/support/log4cpp/include
+export LOG4CPP_LIB={d}GENIEBASE/support/log4cpp/lib
+export LHAPATH={d}GENIEBASE/support/lhapdf
+export LHAPDF_INC={d}GENIEBASE/support/lhapdf/include
+export LHAPDF_LIB={d}GENIEBASE/support/lhapdf/lib
+export XSECSPLINEDIR={d}GENIEBASE/data
+export LD_LIBRARY_PATH={d}LHAPDF_LIB:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib64:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}LOG4CPP_LIB:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}PYTHIA6:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}ROOTSYS/lib:{d}LD_LIBRARY_PATH
+export LD_LIBRARY_PATH={d}GENIE/lib:{d}LD_LIBRARY_PATH
+export PATH={d}GENIE/bin:{d}ROOTSYS/bin:{d}PATH
+unset GENIEBASE
+-----------------------
+Note that +\$GENIEBASE+ must be correctly re-defined in the above scripts for your 
+work area.
+
+First, we'll build the frozen release. Go to the source directory we checked out 
+from the SVN repository and add a configuration script:
+
+.do_configure.sh
+ifdef::basebackend-html[:d: \$]
+ifdef::basebackend-docbook[:d: $]
+ifdef::basebackend-docbook[[source,bash]]
+ifdef::basebackend-html[[source,bash]]
+[subs="attributes,specialcharacters"]
+-----------------------
+#!/bin/bash
+./configure \
+  --enable-doxygen-doc \
+  --enable-debug \
+  --enable-test \
+  --enable-numi \
+  --enable-gsl \
+  --enable-rwght \
+  --with-optimiz-level=O0 \
+  --with-doxygen-path=/usr/bin/doxygen \
+  --with-log4cpp-inc={d}LOG4CPP_INC \
+  --with-log4cpp-lib={d}LOG4CPP_LIB \
+  --with-libxml2-inc=your path to the xml lib include dir
+  --with-libxml2-lib=your path to the xml lib lib dir
+-----------------------
+
+Note that we use some of the environment variables from our environment script, so 
+be sure to source that script first. Also, feel free to point to a different location
+for DOXYGEN, etc. if appropriate.
+Run the configure script (or type the options by hand). Then execute `gmake`. 
+(If you choose to enable a prefix or if you would like to make a system-wide 
+installation, you may then `gmake install`, but this is not necessary if the 
+produced binaries are in your +\$PATH+.)
+
+
+Building from Scratch on OSX
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The process is very similar to that on Linux. First, check out a copy of the GENIE source 
+code in the same way as described above. On newer versions of OSX, Apple has stopped 
+supporting the Gnu toolchain - this means that `g++` is actually `clang`, the LLVM 
+compiler. This is a problem for GENIE as of 2.8 (but a problem we hope to solve in the
+near future).
+
+You may install the real GNU gcc fairly easily with either Fink, MacPorts, or Homebrew. 
+The simplest is probably Homebrew: http://brew.sh.
+First, get Xcode from the Mac App Store (it is free). Then, launch Xcode and open the 
+Preferences pane. Click on ``Downloads'' and install the Command Line Tools.
+Next, install Homebrew according to the instructions on their webpage. Finally, install
+GCC with `brew install apple-gcc42`. 
+
+Then check out and build Pythia6. Note, to build Pythia6, you need a Fortran compiler 
+and modern Apple computers may not have one. 
+To install gfortran with homebrew, simply run `brew install gfortran`.
+
+Next, install GSL (first, check to see if it is installed with `mdfind libgsl`). 
+It can be installed from source, but it is fine to use a package manager like 
+Homebrew: `brew install gsl`.
+
+Then, install ROOT as above, with an appropriately modified setup script, e.g.:
+
+----------------------------------
+#!/bin/sh
+./configure macosx64 \
+  --build=debug \
+  --enable-pythia6 \ 
+  --with-pythia6-libdir=<some path>/GENIE/support/pythia6/v6_424/lib \
+  --enable-gsl-shared \
+  --enable-mathmore \
+  --with-gsl-incdir=/usr/local/include \
+  --with-gsl-libdir=/usr/local/lib
+----------------------------------
+
+Note by default ROOT will build with `clang` instead of the `g++-4.2` we plan on 
+building GENIE with. This may or may not be a problem (not clear yet). `lldb` appears
+to be able to step through code built with both. 
+After ROOT, install log4cpp. You may build from source as above or use a package 
+manager, e.g., `brew install log4cpp`.
+
+For the last third-party library, install LHAPDF. Sadly, there is no Homebrew formula for it.
+
+With everything installed, we are ready to install GENIE. Create environment and setup 
+scripts patterned after those above. If your version of OSX did not support GCC, then 
+we need to edit the GENIE Makefile to use the version we installed with Homebrew. 
+If you installed +apple-gcc42+, then edit +\$GENIE/src/make/Make.include+ so that it sets its
+compiler and linker like so: 
+
+-------------------------------
+CXX = g++-4.2
+LD  = g++-4.2
+-------------------------------
+
+
+Working with the Repository
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+GENIE is managed with a Subversion (http://svnbook.red-bean.com[SVN]) repository on HEPForge. 
+The repository is browsable on the web: https://genie.hepforge.org/trac/browser
+
+-----------------------
+$ svn list http://genie.hepforge.org/svn/branches
+$ export GDVTAG="_devel_branch_not_for_users_v280_06jun13_hugh_nd9832nxll3a1/"
+$ svn co http://genie.hepforge.org/svn/branches/$GDVTAG Dev-R-2_8_0
+$ svn info
+Path: .
+URL: http://genie.hepforge.org/svn/branches/_devel_...
+Repository Root: http://genie.hepforge.org/svn
+Repository UUID: cc9776de-3512-45ca-aafc-e2d9ed43c22c
+Revision: 3966
+Node Kind: directory
+Schedule: normal
+Last Changed Author: sboyd11
+Last Changed Rev: 3966
+Last Changed Date: 2013-09-24 06:19:43 -0500 (Tue, 24 Sep 2013)
+-----------------------
+
+We can examine the remote repository:
+
+-----------------------
+$ svn info http://genie.hepforge.org/svn/branches/${GDVTAG}
+Path: _devel_...
+URL: http://genie.hepforge.org/svn/branches/_devel_...
+Repository Root: http://genie.hepforge.org/svn
+Repository UUID: cc9776de-3512-45ca-aafc-e2d9ed43c22c
+Revision: 3984
+Node Kind: directory
+Last Changed Author: sboyd11
+Last Changed Rev: 3981
+Last Changed Date: 2013-10-04 03:26:08 -0500 (Fri, 04 Oct 2013)
+-----------------------
+
+Here is an example update with conflict resolution (choose the repository version):
+
+-----------------------
+$ svn up
+U    config/master_config.xml
+U    config/Messenger.xml
+U    config/UserPhysicsOptions.xml
+A    config/AlvarezRusoCOHXSec.xml
+A    config/COHXSecAR.xml
+U    src/scripts/setup/genie-config
+U    src/CrossSections/GSLXSecFunc.cxx
+U    src/CrossSections/LinkDef.h
+U    src/CrossSections/COHXSecAR.h
+U    src/CrossSections/GSLXSecFunc.h
+U    src/CrossSections/COHXSecAR.cxx
+U    src/Conventions/KinePhaseSpace.h
+D    src/Coherent/COHHadronicSystemGeneratorAR.cxx
+D    src/Coherent/COHPrimaryLeptonGeneratorAR.cxx
+D    src/Coherent/COHKinematicsGeneratorAR.h
+D    src/Coherent/COHHadronicSystemGeneratorAR.h
+D    src/Coherent/COHKinematicsGeneratorAR.cxx
+D    src/Coherent/COHPrimaryLeptonGeneratorAR.h
+U    src/Coherent/LinkDef.h
+D    src/Coherent/COHPrimaryLeptonGenerator.cxx
+A    src/Coherent/COHPrimaryLeptonGenerator.cxx
+Conflict discovered in 'src/Coherent/COHElKinematicsGenerator.cxx'.
+Select: (p) postpone, (df) diff-full, (e) edit,
+        (mc) mine-conflict, (tc) theirs-conflict,
+        (s) show all options: tc
+G    src/Coherent/COHElKinematicsGenerator.cxx
+U    src/Coherent/COHKinematicsGenerator.h
+D    src/Coherent/COHHadronicSystemGenerator.h
+A    src/Coherent/COHHadronicSystemGenerator.h
+U    src/Coherent/COHKinematicsGenerator.cxx
+D    src/Coherent/COHPrimaryLeptonGenerator.h
+A    src/Coherent/COHPrimaryLeptonGenerator.h
+D    src/Coherent/COHHadronicSystemGenerator.cxx
+A    src/Coherent/COHHadronicSystemGenerator.cxx
+U    src/Coherent/COHElKinematicsGenerator.h
+U    src/AlvarezRuso/AlvarezRusoCOHXSec.cxx
+U    src/AlvarezRuso/coh_multidiff.cxx
+A    src/AlvarezRuso/coh_multidiff_current.cxx
+U    src/AlvarezRuso/LinkDef.h
+A    src/AlvarezRuso/coh_multidiff_current.h
+A    src/Numerical/RootNDIntegrator.cxx
+A    src/Numerical/MultiDimIntegrator.h
+A    src/Numerical/RootNDIntegrator.h
+A    src/Numerical/Simpson2DWrap.cxx
+A    src/Numerical/MultiDimIntegrator.cxx
+A    src/Numerical/Simpson2DWrap.h
+U    src/stdapp/Makefile
+A    src/stdapp/gCohARLookup.cxx
+U    Makefile
+Updated to revision 3984.
+-----------------------
+
+Now when we run `info` we see the most recent change has updated.
+
+-----------------------
+$ svn info
+Path: .
+URL: http://genie.hepforge.org/svn/branches/_devel_...
+Repository Root: http://genie.hepforge.org/svn
+Repository UUID: cc9776de-3512-45ca-aafc-e2d9ed43c22c
+Revision: 3984
+Node Kind: directory
+Schedule: normal
+Last Changed Author: sboyd11
+Last Changed Rev: 3981
+Last Changed Date: 2013-10-04 03:26:08 -0500 (Fri, 04 Oct 2013)
+-----------------------
+
+Once we have updated we need only `gmake` in our project directory with the 
+environment configured (use your GENIE setup script).
+
+Note, Subversion cares about how you check a repository out with respect to whether or 
+not you may commit to it later. In order to be able to commit to a repository, use, 
+for example:
+
+---------
+svn co svn+ssh://svn.hepforge.org/hepforge/svn/genie/branches/${GDVTAG} Dev-R-2_8_0
+---------
+
+You will need the appropriate repository permissions to do this. 

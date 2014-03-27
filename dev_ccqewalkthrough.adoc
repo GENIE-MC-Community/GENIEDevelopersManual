@@ -1,0 +1,358 @@
+
+Running the Code: The CCQE Walkthrough
+--------------------------------------
+[[CCQE-Walkthrough]]
+
+This section assumes you have a cross section spline and have tested the steps outlined
+in <<Running-GENIE-Basics>>.
+
+Setting up Breakpoints in Advance
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The following breaks can be very useful for understanding the flow control, and 
+are valid in the frozen release v2-8-0. Put these commands in a file named 
++.gdbinit+ in the directory where you will run GENIE. If you cloned the supporting
+document repository from <<How-To>>, you may copy +gdbinit_ccqels+ into your +.gdbinit+
+file to get these breakpoints and functions.
+
+WARNING: You may also place +.gdbinit+ in your +\$HOME+ directory, but this sets 
+values for all instances of +gdb+ globally.
+
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
+---------------------------
+# we can't set breakpoints for .so's we haven't loaded yet without this
+set breakpoint pending on
+
+# can often get away with typing: pv or pvis, etc.
+define pvisit
+  p visitor->Id().Key()._M_dataplus._M_p
+end
+
+# print C++ standard strings
+define pcppstr
+ p *(char**)($arg0)._M_dataplus._M_p
+end
+
+#
+# Breakpoints ----------
+#
+
+# 1
+break main
+
+# 2
+break gEvGen.cxx:274
+
+# 3
+# watch the loop through event record visitors!
+# top of the loop. `p visitor->Id().Key()` (pvis above)
+# check the processor and see if you want to step in
+break EventGenerator.cxx:107 if ffwd==false
+commands 3
+pvisit
+end
+
+# 4 actual call to ProcessEventRecord(event_rec)
+break EventGenerator.cxx:118 if ffwd==false
+
+# 5 once an event is accepted
+break QELKinematicsGenerator.cxx:193
+commands 5
+silent
+printf "xsec = %g ; E = %f ; Q^2 = %f\n", xsec, E, gQ2
+end
+
+# 6
+break QELKinematicsGenerator.cxx:116
+
+# 7
+break KineGeneratorWithCache.cxx:78
+
+# 8
+break KineGeneratorWithCache.cxx:83
+
+# 9
+break QELKinematicsGenerator.cxx:499
+
+# 10
+break LwlynSmithQELCCPXSec.cxx:82
+
+# 11
+break LwlynSmithQELCCPXSec.cxx:114
+commands 11
+printf "xsec = %g; ml = %f; Q2 = %f", xsec, ml, -1.0*q2
+end
+
+# 12 - After algorithm loop
+break EventGenerator.cxx:195
+---------------------------
+
+Of course, these breakpoints are fragile if you are changing the source code 
+because they rely on line numbers. You may also use function names to make a 
+more generic ``starting'' +.gdbinit+ file (they may not always work though, 
+while line numbers are reliable).
+
+It is important to understand some of GENIE's design patterns 
+<<wikidesignpatterns>>, <<wikigof>> when stepping through framework code. 
+GENIE makes 
+heavy use of the Singleton Pattern, Visitor Pattern, and Chain of Responsibility 
+Pattern <<gof>>. The Singleton Pattern restricts object creation for a given class 
+to one and only one instance. The Visitor Pattern separates an algorithm from an 
+object structure by moving the hierarchy of methods into one object. The Chain of 
+Responsibility Pattern delegates commands to a chain of processing objects.
+
+These patterns are how you see pointers on the stack accessing global data, and 
+why sometimes loops over vectors of generic classes calling the same method over 
+and over are able to process such a wide variety of behaviors with very compact 
+code.
+
+Don't worry overly much about the patterns in the main framework. Stepping through 
+them with `gdb` will make their operation clear in any case.
+
+Feel free to explore more along the way and step into whatever you like. It is always
+okay to set a break point just after the function you step into so you leap out with 
+a continue at any time.
+
+First,
+
+  gdb -tui gevgen
+
+Then, at the `gdb` prompt,
+
+  set args -n 5 -p 14 -t 1000060120 -e 3 --run 100 \
+  --seed 2989819 \
+  --cross-sections /minerva/app/users/perdue/GENIE/data/ccqe_carbon_splines.xml \
+  --event-generator-list CCQE
+
+It is convenient to simply copy and paste these lines. Note that we use ``\'' to 
+break the line (the whole command needs to be on one line). You should use the 
+correct path to your spline file. Then,
+
+  run
+
+Or just `r`. Try to solve all of the exercises below. Note that you may not have
+the complete set of tools the first time through, or you may come to a conclusion 
+and then change your mind later after you learn more about GENIE and how to investigate
+with `gdb`. Now, for the walkthrough:
+
+[frame="topbot",grid="none"]
+|======================================================
+|n       |  1. We were automatically set to break on `main`. Move past `GetCommandLineArgs`...
+|s       |  2. Step into `Initialize`. You may need to `ctrl-l` in order to clear logging 
+text - keep this in mind going forward! If the screen gets cluttered with logging text 
+(`gdb` does not redraw cleverly), use `ctrl-l` to get an understandable screen.
+|b 237   |  3. Set a breakpoint at the end of this function. We'll test it shortly.
+|inf b   |  4. Note the number of the breakpoint you just set.
+|Exercise|  5. What is the `RunOpt::Instance()`? What pattern does it employ? Use `s` and `n` 
+to drill down into the code.
+|n       |  6. Step down to `XSecTable` (line 233). (You will need to press `n` more than 
+once, etc.)
+|s       |  7. Step into `XSecTable`. 
+|Exercise|  8. Try to figure out what is going on in this function. Step into anything you 
+need to. Experiment with `fin` to step out (and back up into XSecTable).
+|c       |  9. ``Continue'' once you are satisfied in XSecTable. You should end up on line 
+237 of gEvGen.cxx back where we just set our breakpoint. 
+|del #   | 10. Delete the breakpoint we set (we won't need it any longer).
+|inf b   | 11. Verify the breakpoint is gone.
+|n       | 12. Step back into main. You only need to press `n` once; after that you may simply 
+keep pressing `enter`.
+|n       | 13. Step down to `GenerateEventsAtFixedInitState` (line 221).
+|s       | 14. Step into `GenerateEventsAtFixedInitState`.
+|n       | 15. Step down over these functions down to the break at line 274. 
+Try stepping a couple of times with `n`, and use `c` to continue to 274 if you're in a 
+hurry. There are many 
+important things happening along the way here for setting up the run. For the 
+purposes of understanding model development, we'll skip them for now. 
+(They are important for understanding the GENIE _framework_ though.)
+Depending on your interests, you may want to go ahead and step through the 
+instantiation of the `InitialState` to get a quick sense for what is happening
+there.
+|Note    | 16. From this point, it is understood you need to use `n` to step through from 
+one instruction to the next where appropriate. We will be causual with its use.
+|s       | 17. Step into `GenerateEvent` (274). We have a break at that line, so if you
+are ``far away,'' you may press `c` to continue to that line. 
+|b 276   | 18. We don't want to accidently go past line 276.
+|s       | 19. Walk down through `GenerateEvent` and step into `SelectInteraction` 
+at the breakpoint we just set (GEVGDriver.cxx:276).
+|b 178   | 20. We have now stepped into `PhysInteractionSelector::SelectInteraction`.
+Set a breakpoint on line 178.
+|b 214   | 21. Set a breakpoint on line 214.
+|Exercise| 22. Walk through the code in this method and find out the names of the cross 
+section algorithms as they are loaded. You will need to use the `gdb` print command 
+and may need to dereference the variable if it is a pointer.
+|Exercise| 23. When you get to line 178, print the size of the `xseclist`. Remember you 
+can tab-complete variable names and even methods! Then you may delete the breakpoint. 
+(But you aren't obligated to.)
+|Exercise| 24. When you get to line 214, try the following commands (first, recall that
+`ctrl-x o` will switch the focus between the code and command windows of `gdb` while 
+in TUI mode - this will enable us to press ``up'' to go back through command history): 
+`p  evrec`, 
+`p  *evrec`, 
+`p *(evrec->fInteraction)`, 
+`p *(evrec->fInteraction->fProcInfo)`, and 
+`p  evrec->fInteraction->fProcInfo->fScatteringType`. 
+Be careful about when we are 
+and aren't dereferencing a pointer. (Tab completion may not work once you're 
+several methods deep in that chain.) What do these commands show you? Are you processing
+a QuasiElastic event? If not, make sure you followed the steps at the beginning of 
+this section and in <<Running-GENIE-Basics>> correctly. Finally, you may delete the 
+breakpoint.
+|Note    | 25. We just learned some nice tricks for inspecting objects on the heap!
+|n       | 26. Continue stepping through the program until you reach line 322 of 
+GEVGDriver.cxx. 
+|s       | 27. Step into `ProcessEventRecord` on line 322.
+|n       | 28. Walk down to our breakpoint on line 107.
+|Exercise| 29. Hitting the breakpoint should trigger a print statement. What is the 
+information it is telling us?
+|c       | 30. Continue to the breakpoint on line 118. Step into the function if you would 
+like to see what is happening, otherwise, continue.
+|Exercise| 31. Later, return to and study these algorithms we're skipping now. What do they
+do? 
+|c       | 32. Continute again to the breakpoint on line 107. What is the name of the 
+algorithm being processed now.
+|c       | 33. Keep pressing `c` until the break on line 107 tells us the active algorithm
+is `QELKinematicsGenerator`. Then press `c` again to get to line 118.
+|s       | 34. Step into the Kinematics generator.
+|n       | 35. Walk down to the breakpoint on line 116.
+|Exercise| 36. What are the Q-squared limits for this event?
+|s       | 37. Step in at the breakpoint on line 116.
+|Exercise| 38. We end up in `KineGeneratorWithCache::MaxXSec`. Based purely on the class
+name, what do you think this class does. What does the method do?
+|c       | 39. Continue to the breakpoint on line 78.
+|Exercise| 40. Step into `FindMaxXSec` (on line 78). What does this function do? When you're 
+satisfied, type `fin` to exit the funciton.
+|inf b   | 41. What is the number of the breakpoint we just crossed?
+|dis #   | 42. _Disable_ the breakpoint we just crossed by number.
+|c       | 43. Continue to the breakpoint on line 83.
+|s       | 44. Step into `ComputeMaxXSec`. Then, walk down to the breakpoint on line 499.
+|Exercise| 45. What is going on in this function? How are we computing the maximum cross 
+section?
+|s       | 46. Step into the breakpoint on line 499. We are now in the `XSec` funciton.
+Walk down to the breakpoint on line 82.
+|s       | 47. Step into the breakpoint on line 82.
+|Exercise| 48. We are now in `QELFormFactors::Calculate`. What do the functions here do?
+How are the form factors organized? Step into whichever functions look interesting 
+to you. It might be good to set a breakpoint on line 68 so you can hop out quickly
+if you dig deep. Alternatively, you might want to use the `fin` command to hop out 
+functions. 
+|Note    | 49. If you use `fin`, `gdb` may set temporary helper breakpoints. Don't worry,
+it will clean them up. 
+|n       | 50. When you get back into `LwlynSmithQELCCPXSec::XSec`, keep walking through 
+the function and watch what is happening. When we hit the breakpoint on line 114,
+note the cross section. Walk the rest of the way out of the function.
+|disable | 51. When we get back into `QELKinematicsGenerator::ComputeMaxXSec`, disable 
+_all_ breakpoints.
+|u       | 52. Walk through the rest of the for loop, but when you reach line 496, use 
+`until`, or just `u` to finish the loop rather than stepping through it again. 
+(Although you should feel to step through it again to watch what happens and make
+sure you understand what is going on.)
+|enable  | 53. Now turn all breakpoints back on.
+|n       | 54. Keep walking and note what happens next in `KineGeneratorWithCache::MaxXSec`.
+|n       | 55. Once we get back to `QELKinematicsGenerator::ProcessEventRecord`, keep walking.
+|Exercise| 56. By what mechanism do we finally accept a cross section value? Note that while
+walking through, we will end up stopping at our breakpoints inside `LwlynSmithQELCCPXSec::XSec`.
+Use `info b` to figure out their number, or look at the number `gdb` reports and `disable` 
+them (unless you want to watch them). 
+|c       | 57. Once you are satisfied with mechanics of how we accept a cross section, 
+continue to the breakpoint on line 193.
+|n       | 58. Walk through the rest of the function and note what is going on. What happens
+between lines 230 and 234? `fin` when you are satisfied.
+|c       | 59. We are now in `EventGenerator::ProcessEventRecord` again. Continue to the 
+breakpoint on line 107. What is the next algorithm we will process? Step through it if you are 
+interested.
+|c       | 60. Continue until we are alerted the next algorithm is `QELHadronicSystemGenerator`.
+Continue again and step into the breakpoint on line 118.
+|s       | 61. Inside `QELHadronicSystemGenerator::ProcessEventRecord`, step into 
+`AddRecoilBaryon`.
+Walk through that function and back out to `EventGenerator::ProcessEventRecord`. Continue 
+again to the breakpoint on line 107. Keep continuing and noting the names of the algorithms
+we're walking past. Step into any that look interesting.
+|Exercise| 62. Check out what is going on in `NucDeExcitationSim`. Can you figure out what the 
+most important element is in the far detector of the oscillation experiment that Costas 
+happens to belong to?
+|n       | 63. After the algorithm loop, continue to the breakpoint on line 195 and walk out 
+the method, or use `fin` to get out. (The breakpoint on 195 is mostly to guard against 
+over-zealous continuing in the algorithm loop.)
+|n       | 64. Back in `GEVGDriver::GenerateEvent`, keep walking and observing. Walk all the 
+way until we end up in `GenerateEventsAtFixedInitState` in +gEvGen.cxx+. Keep walking until
+we return to the top of the while loop on line 269. Feel free to step into anything 
+interesting along the way.
+|Congratulations! | 65. We finished a walthrough of one event.
+|disable | 66. Disable all breakpoints.
+|c       | 67. Continue to the end. There are no breakpoints, so this will end the program.
+|r       | 68. You may press `r` at any time to re-run. You may even do this while the 
+program is
+running. In fact, a common (if somewhat unstable) situation is to find a bug while stepping
+through code, fix it, _recompile_, and then press `r` to restart. You do not need to exit 
+`gdb` in this case! This way your current breakpoints, etc. are preserved. 
+|======================================================
+
+Where did the long list of algorithms we stepped through come from?
+For CCQE, the classes that process the event can be found and specified in 
++config/EventGenerator.xml+:
+
+--------------------
+<param_set name="QEL-CC"> 
+   <param type="string" name="VldContext"> </param>
+   <param type="int"    name="NModules"> 12 </param>
+   <param type="alg"    name="Module-0">   
+    genie::InitialStateAppender/Default                  
+   </param>
+   <param type="alg"    name="Module-1">   
+    genie::VertexGenerator/Default                       
+   </param>
+   <param type="alg"    name="Module-2">   
+    genie::FermiMover/Default                            
+   </param>
+   <param type="alg"    name="Module-3">   
+    genie::QELKinematicsGenerator/CC-Default             
+   </param>
+   <param type="alg"    name="Module-4">   
+    genie::QELPrimaryLeptonGenerator/Default             
+   </param>
+   <param type="alg"    name="Module-5">   
+    genie::QELHadronicSystemGenerator/Default            
+   </param>
+   <param type="alg"    name="Module-6">   
+    genie::PauliBlocker/Default                          
+   </param>
+   <param type="alg"    name="Module-7">   
+    genie::UnstableParticleDecayer/BeforeHadronTransport 
+   </param>
+   <param type="alg"    name="Module-8">   
+    genie::NucDeExcitationSim/Default                    
+   </param>
+   <param type="alg"    name="Module-9">   
+    genie::HadronTransporter/Default                     
+   </param>
+   <param type="alg"    name="Module-10">  
+    genie::NucBindEnergyAggregator/Default               
+   </param>
+   <param type="alg"    name="Module-11">  
+    genie::UnstableParticleDecayer/AfterHadronTransport  
+   </param>
+   <param type="alg"    name="ILstGen">    
+    genie::QELInteractionListGenerator/CC-Default        
+   </param>
+</param_set>
+--------------------
+
+One very important feature of this approach is that these classes can be swapped or 
+re-ordered. Of course, re-ordering these specific classes might break the event, but nothing
+in GENIE forces us to handle the target first or the final-state lepton second, etc. 
+We can sequence the appropriate set of computations as required by the physics and we can 
+even make some changes dynamically (without recompiling).
+
+
+
+
+
+
+
+
+
+

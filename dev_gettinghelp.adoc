@@ -1,0 +1,11 @@
+
+Getting Help
+------------
+[[Getting-Help]]
+
+There are a number of resources available. In addition to this manual and the 
+Physics and User Manual (PUM) <<geniemanual>>,
+there is a 
+https://www.jiscmail.ac.uk/cgi-bin/webadmin?A0=NEUTRINO-MC-SUPPORT[mailing list] dedicated 
+to GENIE.
+

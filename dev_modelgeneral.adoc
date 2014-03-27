@@ -1,0 +1,20 @@
+
+General Issues in Model Development
+-----------------------------------
+[[General-Issues]]
+
+There are a number of conventions for organizing details of the model. Developers
+should strive to implement their code in accordance with these conventions to 
+promote maintainability. 
+
+.Conventions for Organization
+. Developers should be aware of the +Utils/KineUtils+ class. This class collects
+kinematic limits and methods, for example, channel specific (QEL vs Coherent, etc.) 
+limits on latexmath:[Q^2], latexmath:[W], and others as well as methods for variable
+transformations, etc.
+. The +Interaction/KPhaseSpace+ class collects kinematic limits in from +KineUtils+ and
+offers them through a more generic interface in addition to making calculations as 
+to whether the required phase space is available for a reaction to occur (for example, 
+is there enough energy to produce all the final state particles, etc.).
+
+

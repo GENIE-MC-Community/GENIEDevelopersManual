@@ -1,0 +1,67 @@
+
+
+----------------------
+$ more do_a_ccqe_run.sh 
+#!/bin/sh
+
+# while getopts "n:x" options; do
+#   case $options in
+#     n ) NUMEVT=$OPTARG;;
+#     x ) XMLSPL=$OPTARG;;
+#   esac
+# done
+
+NUMEVT=1
+if [ $# -gt 0 ]; then
+  NUMEVT=$1
+fi
+
+# Optionally supply an extra tag for the file name.
+
+XMLSPL=ccqe_carbon_splines
+if [ $# -gt 1 ]; then
+  XMLSPL=${XMLSPL}_$2
+fi
+XMLSPL=${XMLSPL}.xml
+echo "Using xml file $XMLSPL"
+
+gevgen -n $NUMEVT -p 14 -t 1000060120 -e 1,2 --run 100 \
+  -f 'x*exp(-x)' \
+  --seed 2989819 --cross-sections $XSECSPLINEDIR/$XMLSPL \
+  --event-generator-list CCQE
+
+$ ./do_a_ccqe_run.sh 1000
+----------------------
+
+
+----------------------
+$ root -l gntp.0.ghep.root 
+root [0] 
+Attaching file gntp.0.ghep.root as _file0...
+Warning in <TClass::TClass>: no dictionary for class genie::NtpMCEventRecord is available
+Warning in <TClass::TClass>: no dictionary for class genie::NtpMCRecordI is available
+Warning in <TClass::TClass>: no dictionary for class genie::NtpMCRecHeader is available
+Warning in <TClass::TClass>: no dictionary for class genie::EventRecord is available
+Warning in <TClass::TClass>: no dictionary for class genie::GHepRecord is available
+Warning in <TClass::TClass>: no dictionary for class genie::Interaction is available
+Warning in <TClass::TClass>: no dictionary for class genie::InitialState is available
+Warning in <TClass::TClass>: no dictionary for class genie::Target is available
+Warning in <TClass::TClass>: no dictionary for class genie::ProcessInfo is available
+Warning in <TClass::TClass>: no dictionary for class genie::Kinematics is available
+Warning in <TClass::TClass>: no dictionary for class genie::XclsTag is available
+Warning in <TClass::TClass>: no dictionary for class genie::KPhaseSpace is available
+Warning in <TClass::TClass>: no dictionary for class genie::GHepParticle is available
+root [1] .q
+$ genie -l gntp.0.ghep.root 
+root [0] 
+Processing ${GENIE}/src/scripts/gcint/genie.C...
+Attaching file gntp.0.ghep.root as _file0...
+genie [2] .ls
+TFile**gntp.0.ghep.root
+ TFile*gn         tp.0.ghep.root
+  KEY: genie::NtpMCTreeHeaderheader;1GENIE output tre     e header
+  KEY: TFoldergconfig;1GENIE configs
+  KEY: TFoldergenv;1G       ENIE user environment
+  KEY: TTreegtree;1GENIE MC Truth TTree, Format   : [NtpMCEventRecord]
+----------------------
+

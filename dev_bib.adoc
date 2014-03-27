@@ -1,0 +1,31 @@
+[bibliography]
+Bibliography
+------------
+
+[bibliography]
+- [[[gof]]] E. Gamma, R. Helm, R. Johnson, and J. Vlissides, "Design Patterns: 
+Elements of Reusable Object-Oriented Software", Addison-Wesley, 1994.
+
+- [[[Brun:1997pa]]] Brun, R. and Rademakers, F. "ROOT: An object oriented data 
+  analysis framework". Nucl.Instrum.Meth. A389. 81-86. 1997.
+
+- [[[Whalley:2005nh]]] Whalley, M.R. and Bourilkov, D. and Group, R.C. "The Les 
+  Houches accord PDFs (LHAPDF) and LHAGLUE". 2005. hep-ph/0508110.
+
+- [[[Sjostrand:2006za]]] Sjostrand, Torbjorn and Mrenna, Stephen and Skands, 
+  Peter Z. "PYTHIA 6.4 Physics and Manual". JHEP 0605. 2006
+
+- [[[Andreopoulos:2009rq]]] Andreopoulos, C. and Bell, A. and Bhattacharya, D. 
+  and Cavanna, F. and Dobson, J. and others. "The GENIE Neutrino Monte Carlo 
+  Generator". Nucl.Instrum.Meth. A614. 87-104. 2010.
+
+- [[[geniemanual]]] The GENIE Neutrino Monte Carlo Generator. http://genie.hepforge.org/manuals/GENIE_PhysicsAndUserManual_20130615.pdf. 2013.
+
+- [[[wikidesignpatterns]]] Software design pattern. http://en.wikipedia.org/wiki/Design_pattern_(computer_science). 2013
+
+- [[[wikigof]]] Design Patterns. http://en.wikipedia.org/wiki/Design_Patterns. 2013
+
+- [[[atfnal]]] GENIE at Fermilab. https://cdcvs.fnal.gov/redmine/projects/genie/wiki
+
+
+

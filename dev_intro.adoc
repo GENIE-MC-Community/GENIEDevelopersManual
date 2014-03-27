@@ -1,0 +1,10 @@
+
+Introduction
+------------
+[[Introduction]]
+
+GENIE <<Andreopoulos:2009rq>> is a neutrino event generator created to be the 
+``universal event generator'' requested during the NuINT conference series. It was 
+designed to provide an accessible, extensible framework with many convenience 
+tools leveraging existing HEP software like Pythia <<Sjostrand:2006za>>, 
+ROOT <<Brun:1997pa>>, and LHAPDF <<Whalley:2005nh>>.

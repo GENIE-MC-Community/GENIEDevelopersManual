@@ -1,0 +1,110 @@
+Configuration XML
+-----------------
+[[Configuration-XML]]
+
+GENIE manages much of its configuration via XML text files and specific 
+conventions. The compiler cannot help you find problems if you are using a 
+non-sensical configuration file or have typo in your specification XML. On 
+the other hand, the wide use of XML enables a very loose coupling between 
+GENIE components, making maintenance easier, and allows for dynamic run-time 
+flexibility and decision-making. The secret is to understand and use the XML 
+configuration correctly and make heavy use of grep and other tools to look for 
+typos inside the strings.
+
+// The +AlgConfigPool+ class controls much of the parameter state in GENIE. 
+// Many of these files are loaded when the class is created in methods like
+// +AlgConfigPool::LoadAlgConfig()+.
+
+The first file to examine is +config/master_config.xml+. This file maps 
+GENIE algorithms and modules to the XML files they need. The files referenced 
+below (e.g., +EventGenerator.xml+, etc.) are not themselves hard-coded into 
+GENIE but are configurable. Here we present the defaults, but you can change
+the XML file names in +master_config.xml+ and quickly switch between very large
+sets of configuration changes.
+
+Important Files
+~~~~~~~~~~~~~~~
+
+.Physics Parameters
+. +config/UserPhysicsOptions.xml+: Contains important physical parameters 
+(e.g. CKM matrix parameters, Axial Mass for quasi-elastic scattering, etc.). 
+
+
++UserPhysicsOptions.xml+ is a good place 
+to start if you want to change something about the physics in GENIE, but you 
+aren't sure where to look first.
+It also contains some model execution options (e.g., include lepton mass correction
+in charged-current coherent pion production or not, etc.). 
+We also often set the algorithm names for implementing cross section models here, e.g.
+
+-----------
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-CC"> 
+  genie::ReinSeghalCOHPiPXSec/Default     
+</param>
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-NC"> 
+  genie::ReinSeghalCOHPiPXSec/Default 
+</param>
+-----------
+To replace the ``COH-CC'' model with a different one, we supply a different string 
+here, e.g.:
+
+-----------
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-CC"> 
+  genie::BergerSehgalCOHPiPXSec/Default    
+</param>
+<param type="alg" name="XSecModel@genie::EventGenerator/COH-NC">       
+  genie::BergerSehgalCOHPiPXSec/Default    
+</param>
+-----------
+
+.Event Generator Processes
+. +config/EventGeneratorListAssembler.xml+: Contains physics lists. 
+. +config/EventGenerator.xml+: For each process specified in 
++config/EventGeneratorListAssembler.xml+, the list of _event record visitors_ is 
+specified. An event record visitor implements the interface +EventRecordVisitorI+
+and the execution process will loop over all of these in order and call the 
++ProcessEventRecord+ method. Because this list may specified here in XML, we can 
+set the list of computations dynamically and flexibly. 
+
+In general,
+you will want to use a comprehensive list for physics work, but for development,
+it can be very useful to specify a restricted list like:
+
+-----------
+<param_set name="CCMEC">
+  <param type="int" name="NGenerators"> 1                            </param>
+  <param type="alg" name="Generator-0"> genie::EventGenerator/MEC-CC </param>
+</param_set>
+-----------
+Here, +NGenerators+ is accessed in +EventGeneratorList::AssembleGeneratorList()+ 
+to count the number of event generation algorithms to load.
+
+The lists of event record visitors configure the actual modules that 
+run while simulating an event. The mechanism is very flexible - you may have any number of 
+modules and you may factorize the total event simulation however necessary. The
+lists themselves look like:
+
+----------
+<param_set name="MEC-CC">
+   <param type="string" name="VldContext"> </param>
+   <param type="int"    name="NModules">   5              </param>
+   <param type="alg"    name="Module-0">   
+      genie::InitialStateAppender/Default                 </param>
+   <param type="alg"    name="Module-1">   
+      genie::VertexGenerator/Default                      </param>
+   <param type="alg"    name="Module-2">   
+      genie::MECGenerator/Default                         </param>
+   <param type="alg"    name="Module-3">   
+      genie::HadronTransporter/Default                    </param>
+   <param type="alg"    name="Module-4">   
+      genie::UnstableParticleDecayer/AfterHadronTransport </param>
+   <param type="alg"    name="ILstGen">    
+      genie::MECInteractionListGenerator/CC-Default       </param>
+  </param_set>
+----------
+The algorithms are specified as ``name/configuration'' - this informaiton is
+parsed when the algorithm is instantiated in 
++AlgFactory::GetAlgorithm(string name, string config)+. The strings are 
+not arbitrary - check, for example, +EventGenerator::LoadConfig()+ to see how
+GENIE looks for algorithms keyed by ``Module-''.
+
