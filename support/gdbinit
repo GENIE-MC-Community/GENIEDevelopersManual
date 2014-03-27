@@ -1,0 +1,55 @@
+# we can't set breakpoints for .so's we haven't loaded yet without this
+set breakpoint pending on
+
+# can often get away with typing: pv or pvis, etc.
+define pvisit
+  p visitor->Id().Key()
+end
+
+# print C++ standard strings
+define pcppstr
+ p *(char**)($arg0)._M_dataplus._M_p
+end
+
+#
+# Breakpoints ----------
+#
+
+break main
+
+# Watching for configuration...
+break AlgConfigPool.cxx:67
+break AlgConfigPool.cxx:109
+break EventGenerator.cxx:264
+break Registry.cxx:101
+break GMCJDriver.cxx:609
+
+# Watch the job configuration...
+break GEVGDriver.cxx:183
+
+# Looking for configuration calls...
+break BergerSehgalCOHPiPXSec.cxx:257
+break BergerSehgalCOHPiPXSec.cxx:263
+break BergerSehgalCOHPiPXSec.cxx:269
+
+# watch GenerateEventKinematics()
+break GMCJDriver.cxx:994      
+
+# watch GenerateEvent() (sub Gen Ev Kin)
+# may choose to step over this if you don't want to watch 
+# the tight event loop
+break GMCJDriver.cxx:1212     
+
+# watch ProcessEventRecord(fCurrentRecord) 
+break GEVGDriver.cxx:322      
+
+# watch the loop through event record visitors!
+# top of the loop. `p visitor->Id().Key()` (pvis above)
+# check the processor and see if you want to step in
+break EventGenerator.cxx:107 if ffwd==false
+                          
+# actual call to ProcessEventRecord(event_rec)
+break EventGenerator.cxx:118 if ffwd==false
+
+# once we've accepted an event
+break COHKinematicsGenerator.cxx:262

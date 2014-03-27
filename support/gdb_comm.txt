@@ -1,0 +1,59 @@
+# Try to make splines
+gdb -tui gmkspl
+
+set args -p 14,-14 -t 1000060120 -o test.xml --event-generator-list CCCOH
+
+
+# For general running.
+gdb -tui gevgen
+
+set args -n 5 -p 14 -t 1000060120 -e 0,10 --run 100 \
+-f 'x*exp(-x)' --seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 3 --run 100 \
+--seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 0,10 --run 100 \
+-f 'x*exp(-x)' --seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_dev.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 0,10 --run 100 \
+-f 'x*exp(-x)' --seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_ber.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 1,4 --run 100 \
+-f 'exp(-x/1000000)' --seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_ber.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 1,4 --run 100 \
+-f '1 - (1/1000000)*log(x+1)' --seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_ber.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 3 --run 100 \
+--seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_ber.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 1 --run 100 \
+--seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_bergp.xml \
+--event-generator-list CCCOH
+
+set args -n 5 -p 14 -t 1000060120 -e 3 --run 100 \
+--seed 2989819 \
+--cross-sections /minerva/app/users/perdue/GENIE/data/ccqe_carbon_splines.xml \
+--event-generator-list CCQE
+
+# gdb -tui gevgen --args -n 5 -p 14 -t 1000060120 -e 0,10 --run 100 \
+# -f 'x*exp(-x)' --seed 2989819 \
+# --cross-sections /minerva/app/users/perdue/GENIE/data/coh_carbon_splines_ber.xml \
+# --event-generator-list CCCOH
+
