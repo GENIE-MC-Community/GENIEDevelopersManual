@@ -1,0 +1,7 @@
+GENIEDevelopersManual.pdf
+
+*.html
+*.css
+
+get_remote_scripts_and_files.sh
+my_compile_adoc.sh
