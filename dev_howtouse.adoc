@@ -26,6 +26,6 @@ patterns.
 The complete source code for this document and some supporting files for the exercises 
 within (cross section spline files, the +build_pythia6.sh+ script, some run scripts, 
 `gdb` and `valgrind` templates for the `.gdbinit` and `.valgrindrc` files, etc.) may
-be checked out from Fermilab Redmine at any time with:
+be checked out from GitHub at any time with:
 
-  git clone http://cdcvs.fnal.gov/projects/developer_manual
+  git clone https://github.com/GENIEMC/GENIEDevelopersManual.git

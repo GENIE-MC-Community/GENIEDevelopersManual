@@ -12,6 +12,27 @@ already installed GENIE or read the PUM may skip this section. Developers
 who need all the supporting libraries build with debug symbols may find it useful 
 though.
 
+To build on Linux, first try to use the `lamp` package. You may check it out
+from https://github.com/GENIEMC/lamp[GitHub]:
+
+-----------------------
+git clone https://github.com/GENIEMC/lamp.git
+-----------------------
+
+Run the `rub_the_lamp.sh` script with a `-h` or `--help` flag to get
+a help menu. By default the script checks out the latest public branch from the
+official HepForge repository, but other options are available.
+
+WARNING: The GitHub repositories are for schools, workshops, and scratch projects only.
+Do _NOT_ check out code from GitHub and use it in your experiment or to publish papers.
+Furthermore, you should not count on the code repositories remaining on GitHub (although 
+the document repositories will probably stick around). Use the 
+http://genie.hepforge.org[official SVN repository] for scientific results.
+
+If you have trouble with the `lamp` build or if you would just prefer to go through the 
+build by hand, continue reading. If you need to build on Mac OSX, skip to 
+<<Build-Scratch-OSX>>.
+
 This document logs the experience of working with multiple installations in parallel. 
 We will provide examples of installing GENIE and all third-party software by hand. 
 Developers should use centrally installed software when appropriate, but it is important 
@@ -290,6 +311,7 @@ produced binaries are in your +\$PATH+.)
 
 Building from Scratch on OSX
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+[[Build-Scratch-OSX]]
 
 The process is very similar to that on Linux. First, check out a copy of the GENIE source 
 code in the same way as described above. On newer versions of OSX, Apple has stopped 

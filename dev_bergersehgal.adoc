@@ -4,7 +4,7 @@ Implementing New Models
 
 Implementing a new model in GENIE is relatively straightforward, factoring out the 
 complexity of the actual physics and considering only the software architecture.
-Modles in GENIE are broken down into:
+Models in GENIE are broken down into:
 
 . A series of event record visitors. Each visitor carries out once link in the computation
 chain required to connect the initial state (the projectile and the target) and the final 
