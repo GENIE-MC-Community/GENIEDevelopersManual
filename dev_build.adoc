@@ -19,10 +19,9 @@ from https://github.com/GENIEMC/lamp[GitHub]:
 git clone https://github.com/GENIEMC/lamp.git
 -----------------------
 
-If you run the `rub_the_lamp.sh` script without any arguments or flags, you should get 
-a help menu. Most likely, you want `./rub_the_lamp.sh -p 6` which uses Pythia 6 (GENIE may
-not build against Pythia 8 if you try that) and it checks the code out from the GENIEMC
-organization on GitHub.
+Run the `rub_the_lamp.sh` script with a `-h` or `--help` flag to get
+a help menu. By default the script checks out the latest public branch from the
+official HepForge repository, but other options are available.
 
 WARNING: The GitHub repositories are for schools, workshops, and scratch projects only.
 Do _NOT_ check out code from GitHub and use it in your experiment or to publish papers.
