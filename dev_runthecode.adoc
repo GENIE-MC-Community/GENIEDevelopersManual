@@ -16,11 +16,11 @@ Getting Set-up
 It is useful to add a ``set up'' function to your `.bash_profile` (or the appropriate 
 file if you use a different shell):
 
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 ---------------------------
 function gwork () {
   export GENIEWORKDIR=(Your working area)/GENIE/
@@ -134,11 +134,11 @@ to run using a single nucleus.
 
 Create a shell script to run your job, +do_a_ccqe_run.sh+:
 
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 ---------------------------
 #!/bin/sh
 gevgen -n 5 -p 14 -t 1000060120 -e 1,2 --run 100 \

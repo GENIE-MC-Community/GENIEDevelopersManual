@@ -117,15 +117,15 @@ We will author a configure script (use your +support+ area) both to make it clea
 what is happening and to have a record of what we did: 
 
 .do_configure.sh
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 -----------------------
 #!/bin/bash
 INSTDIR=/minerva/app/users/perdue/GENIE/support/gsl
-./configure --prefix={d}INSTDIR
+./configure --prefix=$INSTDIR
 unset INSTDIR
 -----------------------
 
@@ -151,11 +151,11 @@ $ git checkout -b v5-34-08 v5-34-08
 
 We will again author a configuration script, +do_configure.sh+:
 
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 -----------------------
 #!/bin/sh
 export GDVS=/minerva/app/users/perdue/GENIE/support
@@ -213,62 +213,62 @@ Next, we will build GENIE. We will keep a pair of scripts to configure our
 environments, first for the frozen release:
 
 .environment_genie.sh
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 -----------------------
 #!/bin/bash
 echo "Setting GENIE environment variables..."
 export GENIEBASE=/minerva/app/users/perdue/GENIE
-export GENIE={d}GENIEBASE/R-2_8_0
-export PYTHIA6={d}GENIEBASE/support/pythia6/v6_424/lib
-export ROOTSYS={d}GENIEBASE/support/root
-export LOG4CPP_INC={d}GENIEBASE/support/log4cpp/include
-export LOG4CPP_LIB={d}GENIEBASE/support/log4cpp/lib
-export LHAPATH={d}GENIEBASE/support/lhapdf
-export LHAPDF_INC={d}GENIEBASE/support/lhapdf/include
-export LHAPDF_LIB={d}GENIEBASE/support/lhapdf/lib
-export XSECSPLINEDIR={d}GENIEBASE/data
-export LD_LIBRARY_PATH={d}LHAPDF_LIB:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/lib64:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}LOG4CPP_LIB:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}PYTHIA6:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}ROOTSYS/lib:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}GENIE/lib:{d}LD_LIBRARY_PATH
-export PATH={d}GENIE/bin:{d}ROOTSYS/bin:{d}PATH
+export GENIE=$GENIEBASE/R-2_8_0
+export PYTHIA6=$GENIEBASE/support/pythia6/v6_424/lib
+export ROOTSYS=$GENIEBASE/support/root
+export LOG4CPP_INC=$GENIEBASE/support/log4cpp/include
+export LOG4CPP_LIB=$GENIEBASE/support/log4cpp/lib
+export LHAPATH=$GENIEBASE/support/lhapdf
+export LHAPDF_INC=$GENIEBASE/support/lhapdf/include
+export LHAPDF_LIB=$GENIEBASE/support/lhapdf/lib
+export XSECSPLINEDIR=$GENIEBASE/data
+export LD_LIBRARY_PATH=$LHAPDF_LIB:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LOG4CPP_LIB:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PYTHIA6:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$GENIE/lib:$LD_LIBRARY_PATH
+export PATH=$GENIE/bin:$ROOTSYS/bin:$PATH
 unset GENIEBASE
 -----------------------
 
 And for the development installation: 
 
 .environment_devgenie.sh
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 -----------------------
 #!/bin/bash
 echo "Setting GENIE environment variables..."
 export GENIEBASE=/minerva/app/users/perdue/GENIE
-export GENIE={d}GENIEBASE/Dev-R-2_8_0
-export PYTHIA6={d}GENIEBASE/support/pythia6/v6_424/lib
-export ROOTSYS={d}GENIEBASE/support/root
-export LOG4CPP_INC={d}GENIEBASE/support/log4cpp/include
-export LOG4CPP_LIB={d}GENIEBASE/support/log4cpp/lib
-export LHAPATH={d}GENIEBASE/support/lhapdf
-export LHAPDF_INC={d}GENIEBASE/support/lhapdf/include
-export LHAPDF_LIB={d}GENIEBASE/support/lhapdf/lib
-export XSECSPLINEDIR={d}GENIEBASE/data
-export LD_LIBRARY_PATH={d}LHAPDF_LIB:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/lib64:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}LOG4CPP_LIB:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}PYTHIA6:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}ROOTSYS/lib:{d}LD_LIBRARY_PATH
-export LD_LIBRARY_PATH={d}GENIE/lib:{d}LD_LIBRARY_PATH
-export PATH={d}GENIE/bin:{d}ROOTSYS/bin:{d}PATH
+export GENIE=$GENIEBASE/Dev-R-2_8_0
+export PYTHIA6=$GENIEBASE/support/pythia6/v6_424/lib
+export ROOTSYS=$GENIEBASE/support/root
+export LOG4CPP_INC=$GENIEBASE/support/log4cpp/include
+export LOG4CPP_LIB=$GENIEBASE/support/log4cpp/lib
+export LHAPATH=$GENIEBASE/support/lhapdf
+export LHAPDF_INC=$GENIEBASE/support/lhapdf/include
+export LHAPDF_LIB=$GENIEBASE/support/lhapdf/lib
+export XSECSPLINEDIR=$GENIEBASE/data
+export LD_LIBRARY_PATH=$LHAPDF_LIB:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/usr/lib64:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LOG4CPP_LIB:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$PYTHIA6:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$ROOTSYS/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$GENIE/lib:$LD_LIBRARY_PATH
+export PATH=$GENIE/bin:$ROOTSYS/bin:$PATH
 unset GENIEBASE
 -----------------------
 Note that +\$GENIEBASE+ must be correctly re-defined in the above scripts for your 
@@ -278,11 +278,11 @@ First, we'll build the frozen release. Go to the source directory we checked out
 from the SVN repository and add a configuration script:
 
 .do_configure.sh
-ifdef::basebackend-html[:d: \$]
-ifdef::basebackend-docbook[:d: $]
-ifdef::basebackend-docbook[[source,bash]]
-ifdef::basebackend-html[[source,bash]]
-[subs="attributes,specialcharacters"]
+// ifdef::basebackend-html[:d: \$]
+// ifdef::basebackend-docbook[:d: $]
+// ifdef::basebackend-docbook[[source,bash]]
+// ifdef::basebackend-html[[source,bash]]
+// [subs="attributes,specialcharacters"]
 -----------------------
 #!/bin/bash
 ./configure \
@@ -294,8 +294,8 @@ ifdef::basebackend-html[[source,bash]]
   --enable-rwght \
   --with-optimiz-level=O0 \
   --with-doxygen-path=/usr/bin/doxygen \
-  --with-log4cpp-inc={d}LOG4CPP_INC \
-  --with-log4cpp-lib={d}LOG4CPP_LIB \
+  --with-log4cpp-inc=$LOG4CPP_INC \
+  --with-log4cpp-lib=$LOG4CPP_LIB \
   --with-libxml2-inc=your path to the xml lib include dir
   --with-libxml2-lib=your path to the xml lib lib dir
 -----------------------
