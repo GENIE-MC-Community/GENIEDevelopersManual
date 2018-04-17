@@ -37,7 +37,7 @@ to study. Step through the spline generation with +gdb+ using `gdb -tui gmkspl` 
 set the arguments to whatever is required to generate your study channel only. This 
 will give you a good idea as to how the numerical integrators are called. (You needn't
 be concerned with the actual methods of integration though unless that is a focus of 
-your work.
+your work.)
 . Step through the computation of the differential cross section. Stepping through the 
 spline generation carefully will also bring you through the codes that do these steps
 but you may also wish to just run them on their own, again watching in +gdb+ wtih 
@@ -184,18 +184,22 @@ safe to extend enums by appending - do not prepend or insert or you lose
 the ability to read back older versions of the files with current software
 while preserving the semantic meaning of the enum). We will add an enum
 type to `ScatteringType.h` in the +$GENIE/src/Framework/Interaction+ folder.
+In this case, we choose `kScQE1B2BInterfere`, although that choice may not
+be permanent.
 
 Returning to the `InteractionList` generator, we make a new class, here in
-+src/Physics/Multinucleon/EventGen+ (the choice of the `Multinucleon` folder
-is pseudo-arbitrary here - we should put physics models where they may be
-easily found, and we may indeed choose to create an entirely new folder, etc.).
-We call the new class +STAInteractionListGenerator+ and create header and
-implementation files. One key requirement is the file will use the named
++$GENIE/src/Physics/Multinucleon/EventGen+ (the choice of the `Multinucleon`
+folder is pseudo-arbitrary here - we should put physics models where they may
+be easily found, and we may indeed choose to create an entirely new folder,
+etc.). We call the new class +STAInteractionListGenerator+ and create header
+and implementation files. One key requirement is the file will use the named
 constructor pattern to create new `Interaction` objects with the right
 data. We need to make these constructors in the `Interaction` class
 found in +src/Framework/Interaction+. We edit the header, for example, to
 include the lines:
 
+ifdef::basebackend-docbook[[source,c++]]
+ifdef::basebackend-html[[source,cpp]]
 -------
   static Interaction * STACC     (int tgt, int probe, double E=0);
   static Interaction * STANC     (int tgt, int probe, double E=0);
@@ -212,5 +216,99 @@ similar to the +MECInteractionListGenerator.xml+ - with three different
 algorithm configurations for CC, NC, and EM interactions and boolean switches
 for the different modes.
 
+While we're working on these items, we'll add an `IsSTA()` method to
++$GENIE/src/Framework/Interaction/ProcessInfo+. This abbreviation ('STA')
+may not stick - there is likely a better option.
 
+In order to get our `STAInteractionListGenerator` class to build, we must add
+a line to `$GENIE/src/Physics/Multinucleon/LinkDef.h`. The GENIE build system
+uses this file to create ROOT dictionaries able to read the class. The line
+we need to add is:
 
+-------
+  #pragma link C++ class genie::STAInteractionListGenerator;
+-------
+
+Next, we need to consider what the physics process will look like at runtime.
+If we examine `$GENIE/config/EventGeneratorListAssembler.xml`, we find the
+definition of the `--event-generator-list` flags we may pass to apps like
+`gevgen`. For example, we see definitions like:
+
+-------
+  <param_set name="CCQE+CCMEC">
+     <param type="int" name="NGenerators">  2                                  </param>
+     <param type="alg" name="Generator-0">  genie::EventGenerator/MEC-CC       </param>
+     <param type="alg" name="Generator-1">  genie::EventGenerator/QEL-CC       </param>
+  </param_set>
+
+  <param_set name="EMMEC">
+     <param type="int" name="NGenerators">   1                                  </param>
+     <param type="alg" name="Generator-0">   genie::EventGenerator/MEC-EM       </param>
+  </param_set>
+-------
+
+We will need `STA` lists defined in this style. In the neutrino-scattering
+portion of the file, we add:
+
+-------
+  <param_set name="CCSTA">
+     <param type="int" name="NGenerators">  1                                  </param>
+     <param type="alg" name="Generator-0">  genie::EventGenerator/STA-CC       </param>
+  </param_set>
+
+  <param_set name="NCSTA">
+     <param type="int" name="NGenerators">  1                                  </param>
+     <param type="alg" name="Generator-0">  genie::EventGenerator/STA-NC       </param>
+  </param_set>
+
+  <param_set name="WeakSTA">
+     <param type="int" name="NGenerators">   2                                  </param>
+     <param type="alg" name="Generator-0">   genie::EventGenerator/STA-CC       </param>
+     <param type="alg" name="Generator-1">   genie::EventGenerator/STA-NC       </param>
+  </param_set>
+-------
+
+And, in the electron-scattering portion of the file, we add:
+
+-------
+  <param_set name="EMSTA">
+     <param type="int" name="NGenerators">   1                                  </param>
+     <param type="alg" name="Generator-0">   genie::EventGenerator/STA-EM       </param>
+  </param_set>
+-------
+
+Now, we need to define the lists, `STA-EM`, `STA-CC`, and `STA-NC` in the file
+`$GENIE/config/EventGenerator.xml`:
+
+-------
+  <param_set name="STA-CC">
+     <param type="string" name="VldContext"> </param>
+     <param type="int"    name="NModules">   4                                                   </param>
+     <param type="alg"    name="Module-0">   genie::InitialStateAppender/Default                 </param>
+     <param type="alg"    name="Module-2">   genie::STAGenerator/Default                         </param>
+     <param type="alg"    name="Module-3">   genie::HadronTransporter/Default                    </param>
+     <param type="alg"    name="Module-4">   genie::UnstableParticleDecayer/AfterHadronTransport </param>
+     <param type="alg"    name="ILstGen">    genie::STAInteractionListGenerator/CC-Default       </param>
+  </param_set>
+-------
+
+we also add the `NC` and `EM` analogs of this list. Note that we have
+dropped `VertexGenerator` because the physics code we are using here
+will incorporate an implicit ground state that will be used to seed the
+interaction in `{x,y,z}` space.
+
+A new class appeared in the event generator XML: `STAGenerator`. We will
+create a stub class based in `$GENIE/src/Physics/Multinucleon/EventGen`
+with that name, and declare the class in the local `LinkDef.h`. We also
+need to add an `STAGenerator.xml` file to the `$GENIE/config` folder.
+We follow the `MECGenerator.xml` example - note that we drop the `Common`
+entry here (referring to an entry in `CommonParams.xml`).
+
+In `STAGenerator::ProcessEventRecord()`, we add a check that the cross
+section algorithm is `PastoreCarlsonSTAPXSec2018`. We must add this class
+to +$GENIE/src/Physics/Multinucleon/XSection+. We must also add an integrator
+class to the same folder, here `STAXSec`. Of course, these classes must be
+added to the local `LinkDef.h`.
+
+We must also add a configuration XML, `PastoreCarlsonSTAPXSec2018.xml` to
+`$GENIE/config`, along with a `STAXSec.xml`.
