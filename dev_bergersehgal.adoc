@@ -312,3 +312,6 @@ added to the local `LinkDef.h`.
 
 We must also add a configuration XML, `PastoreCarlsonSTAPXSec2018.xml` to
 `$GENIE/config`, along with a `STAXSec.xml`.
+
+Finally, we must add all the XML files we have created to the list of files
+in +master_config.xml+.
